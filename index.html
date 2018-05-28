@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Metronome</title>
+</head>
+<body>
+    BPM:<input id="bpm" /> <br />
+    <button id="toggle">start</button> <br />
+    <button id="tap">tap</button>
+
+</body>
+<script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let tap = [];
+    document.getElementById("tap").addEventListener("click", ()=>{
+        tap.push(Date.now());
+        const {bpm, tap_list} = calcTap(tap);
+        tap = tap_list;
+        if (bpm !== null){
+            document.getElementById("bpm").value  = bpm;
+        }
+    });
+
+    const setNote = (when) =>{
+        const length = 0.1;
+        const oscillator = audioCtx.createOscillator();
+        oscillator.connect(audioCtx.destination);
+        oscillator.start(when);
+        oscillator.stop(when + length);
+    };
+    let timer = null;
+    const button = document.getElementById("toggle");
+    button.addEventListener("click", ()=>{
+        button.innerText = "stop";
+        const interval = bpmToInterval(document.getElementById("bpm").value);
+        const true_interval = interval === Infinity ? 2 : interval;
+        if(timer == null){
+            let last_time = audioCtx.currentTime;
+            setNote(last_time);
+            timer = setInterval(()=>{
+                const until = audioCtx.currentTime + 1;
+                const times = getRange(last_time, until, true_interval);
+                last_time = times.slice(-1)[0];
+                times.slice(1).forEach((time)=>{
+                    setNote(time);
+                });
+            }, 1);
+        } else{
+            clearInterval(timer);
+            timer = null;
+            button.innerText = "start";
+        }
+    });
+    function getRange(start, stop, interval){
+        const time_list = [];
+        let current_time = start;
+        while(current_time <= stop){
+            time_list.push(current_time);
+            current_time += interval;
+        }
+        return time_list;
+    }
+    function bpmToInterval(bpm){
+        return 60.0 / bpm;
+    }
+    function intervalToBpm(interval){
+        return 60.0 / interval;
+    }
+    function calcTap(tap_list){
+        if(tap_list.length < 3){
+            return {bpm: null, tap_list : tap_list};
+        }
+        if(tap_list.length > 1 &&
+                tap[1] - tap[0]  > 6 * 1000
+        ){
+            return calcTap(tap_list.slice(1));
+        }
+        const list_to_use = tap_list.slice(-3);
+
+        const sum_of_sub = (list_to_use[2] - list_to_use[1]) +
+            (list_to_use[1] - list_to_use[0]);
+        const interval = sum_of_sub / 2 / 1000;
+
+        return {bpm : Math.round(intervalToBpm(interval)) , tap_list: tap_list};
+    }
+
+</script>
+</html>
