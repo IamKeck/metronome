@@ -15,6 +15,7 @@
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const gain = audioCtx.createGain();
     gain.connect(audioCtx.destination);
+    let interval = null;
     const setNote = (when) =>{
         const length = 0.1;
         const oscillator = audioCtx.createOscillator();
@@ -23,8 +24,11 @@
         oscillator.stop(when + length);
     };
     let timer = null;
-    app.ports.toggle.subscribe((interval)=>{
-        console.log("prot");
+    app.ports.newInterval.subscribe((new_interval)=>{
+        interval = new_interval;
+    });
+    app.ports.toggle.subscribe((new_interval)=>{
+        interval = new_interval;
         if(timer == null){
             gain.gain.value = 1;
             let last_time = audioCtx.currentTime;
