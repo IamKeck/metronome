@@ -7,7 +7,7 @@ import Time
 import Result
 import Task
 import String
-import Delay
+import Process
 
 
 type alias Model =
@@ -25,7 +25,6 @@ type Msg
     | TapTime Float
     | BpmChange BpmDirection
     | BpmHold BpmDirection
-    | BpmHoldStart BpmDirection
     | BpmRelease
     | GotHoldBeginTime Float
     | GotHoldJudgeTime BpmDirection Float
@@ -39,6 +38,11 @@ maxBpm =
 defaultBpm : Int
 defaultBpm =
     120
+
+
+holdInterval : Float
+holdInterval =
+    500
 
 
 initialModel : Model
@@ -82,12 +86,9 @@ update msg model =
 
         BpmHold d ->
             model
-                ! [ Delay.after 1 Time.second <| BpmHoldStart d
+                ! [ Process.sleep (holdInterval * Time.millisecond) |> Task.andThen (always Time.now) |> Task.perform (GotHoldJudgeTime d)
                   , Time.now |> Task.perform GotHoldBeginTime
                   ]
-
-        BpmHoldStart d ->
-            model ! [ Time.now |> Task.perform (GotHoldJudgeTime d) ]
 
         BpmRelease ->
             { model | holdDirection = Nothing, holdBeginTime = Nothing } ! []
@@ -98,7 +99,7 @@ update msg model =
         GotHoldJudgeTime d f ->
             { model
                 | holdDirection =
-                    if (Maybe.map ((-) f >> flip (>) 900) model.holdBeginTime |> Maybe.withDefault False) then
+                    if (Maybe.map ((-) f >> flip (>) (holdInterval * 0.7)) model.holdBeginTime |> Maybe.withDefault False) then
                         Just d
                     else
                         Nothing
