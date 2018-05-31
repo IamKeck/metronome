@@ -13,13 +13,20 @@
     const app = Elm.Main.fullscreen();
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const gain = audioCtx.createGain();
-    gain.connect(audioCtx.destination);
+    const main_gain = audioCtx.createGain();
+    main_gain.connect(audioCtx.destination);
+    const head_note_gain = audioCtx.createGain();
+    head_note_gain.gain.value = 1;
+    head_note_gain.connect(main_gain);
+    const eighth_note_gain = audioCtx.createGain();
+    eighth_note_gain.gain.value = 0.3;
+    eighth_note_gain.connect(main_gain);
     let interval = null;
-    const setNote = (when) =>{
+    const setNote = (when, connect_to) =>{
         const length = 0.1;
         const oscillator = audioCtx.createOscillator();
-        oscillator.connect(gain);
+        console.log(connect_to);
+        oscillator.connect(connect_to);
         oscillator.start(when);
         oscillator.stop(when + length);
     };
@@ -30,31 +37,42 @@
     app.ports.toggle.subscribe((new_interval)=>{
         interval = new_interval;
         if(timer == null){
-            gain.gain.value = 1;
+            main_gain.gain.value = 1;
             let last_time = audioCtx.currentTime;
-            setNote(last_time);
+            setNote(last_time, head_note_gain);
+            setNote(last_time + interval / 2, eighth_note_gain);
             timer = setInterval(()=>{
-                const until = audioCtx.currentTime + 1;
+                const until = audioCtx.currentTime + 2;
                 const times = getRange(last_time, until, interval);
-                last_time = times.slice(-1)[0];
-                times.slice(1).forEach((time)=>{
-                    setNote(time);
+                last_time = times.length == 0 ? last_time : times.slice(-1)[0].head[0] || last_time;
+                times.forEach((time)=>{
+                    time.head.forEach((time)=>setNote(time, head_note_gain));
+                    time.eighth.forEach((time)=>setNote(time, eighth_note_gain));
                 });
-            }, 1);
+            }, 2);
         } else{
-            gain.gain.value = 0;
+            main_gain.gain.value = 0;
             clearInterval(timer);
             timer = null;
         }
     });
     function getRange(start, stop, interval){
-        const time_list = [];
+        const head_list = [];
         let current_time = start;
-        while(current_time <= stop){
-            time_list.push(current_time);
+        const stop_time = stop - interval;
+        while(current_time <= stop_time){
+            head_list.push(current_time);
             current_time += interval;
         }
-        return time_list;
+        const head_list_to_use = head_list.slice(1);
+        return head_list_to_use.map((head_note)=>getBeatsInBar(head_note, interval));
+    }
+
+    function getBeatsInBar(head_note_time, interval){
+        return {
+            head: [head_note_time],
+            eighth: [head_note_time + interval / 2]
+        }
     }
 </script>
 
