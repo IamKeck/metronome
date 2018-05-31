@@ -11,7 +11,28 @@ import Process
 
 
 type alias Model =
-    { isRunning : Bool, bpm : Int, tapList : List Float, holdDirection : Maybe BpmDirection, holdBeginTime : Maybe Float }
+    { isRunning : Bool
+    , bpm : Int
+    , tapList : List Float
+    , holdDirection : Maybe BpmDirection
+    , holdBeginTime : Maybe Float
+    , gains : Gains
+    }
+
+
+type alias Gains =
+    { headGain : Int
+    , eighthGain : Int
+    , sixteenthGain : Int
+    , tripletsGain : Int
+    }
+
+
+type NoteType
+    = Head
+    | Eighth
+    | Sixteenth
+    | Triplets
 
 
 type BpmDirection
@@ -28,11 +49,12 @@ type Msg
     | BpmRelease
     | GotHoldBeginTime Float
     | GotHoldJudgeTime BpmDirection Float
+    | GainChanged NoteType String
 
 
 maxBpm : Int
 maxBpm =
-    500
+    250
 
 
 defaultBpm : Int
@@ -47,7 +69,18 @@ holdInterval =
 
 initialModel : Model
 initialModel =
-    { isRunning = False, bpm = 120, tapList = [], holdDirection = Nothing, holdBeginTime = Nothing }
+    { isRunning = False
+    , bpm = 120
+    , tapList = []
+    , holdDirection = Nothing
+    , holdBeginTime = Nothing
+    , gains =
+        { headGain = 100
+        , eighthGain = 0
+        , sixteenthGain = 0
+        , tripletsGain = 0
+        }
+    }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -106,10 +139,19 @@ update msg model =
             }
                 ! []
 
+        GainChanged t v ->
+            let
+                changedGains =
+                    String.toInt v
+                        |> Result.map (setVolume t model.gains)
+                        |> Result.withDefault model.gains
+            in
+                { model | gains = changedGains } ! [ newGains changedGains ]
+
 
 main : Program Never Model Msg
 main =
-    program { init = initialModel ! [], update = update, subscriptions = subscriptions, view = view }
+    program { init = initialModel ! [ newGains initialModel.gains ], update = update, subscriptions = subscriptions, view = view }
 
 
 subscriptions : Model -> Sub Msg
@@ -124,7 +166,7 @@ subscriptions m =
 
 view : Model -> Html.Html Msg
 view model =
-    Html.ul []
+    Html.ul [] <|
         [ Html.li []
             [ Html.text <| "BPM: " ++ (toString model.bpm) ]
         , Html.li []
@@ -156,6 +198,19 @@ view model =
                 [ Html.text "down" ]
             ]
         ]
+            ++ List.map
+                (\t ->
+                    Html.li []
+                        [ Html.text <| noteTypeToString t
+                        , Html.input
+                            [ Html.Events.onInput <| GainChanged t
+                            , Html.Attributes.type_ "range"
+                            , getVolume t model.gains |> toString |> Html.Attributes.value
+                            ]
+                            []
+                        ]
+                )
+                [ Head, Eighth, Sixteenth, Triplets ]
 
 
 createDiffList : (number -> number -> number) -> List number -> List number
@@ -202,7 +257,58 @@ newBpmAndTapList tapList =
                 ( Nothing, tapList )
 
 
+noteTypeToString : NoteType -> String
+noteTypeToString n =
+    case n of
+        Head ->
+            "♩"
+
+        Eighth ->
+            "r ♪"
+
+        Sixteenth ->
+            "16"
+
+        Triplets ->
+            "3"
+
+
+getVolume : NoteType -> Gains -> Int
+getVolume n g =
+    case n of
+        Head ->
+            g.headGain
+
+        Eighth ->
+            g.eighthGain
+
+        Sixteenth ->
+            g.sixteenthGain
+
+        Triplets ->
+            g.tripletsGain
+
+
+setVolume : NoteType -> Gains -> Int -> Gains
+setVolume n g v =
+    case n of
+        Head ->
+            { g | headGain = v }
+
+        Eighth ->
+            { g | eighthGain = v }
+
+        Sixteenth ->
+            { g | sixteenthGain = v }
+
+        Triplets ->
+            { g | tripletsGain = v }
+
+
 port toggle : Float -> Cmd msg
 
 
 port newInterval : Float -> Cmd msg
+
+
+port newGains : Gains -> Cmd msg
