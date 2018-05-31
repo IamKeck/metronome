@@ -35,6 +35,19 @@
         oscillator.start(when);
         oscillator.stop(when + length);
     };
+    const setNotes = (last_time) =>{
+        const until = audioCtx.currentTime + 2;
+        const times = getRange(last_time, until, interval);
+        const new_last_time = times.length == 0 ? last_time : times.slice(-1)[0].head[0] || last_time;
+        times.forEach((time)=>{
+            time.head.forEach((time)=>setNote(time, head_note_gain));
+            time.eighth.forEach((time)=>setNote(time, eighth_note_gain));
+            time.sixteenth.forEach((time)=>setNote(time, sixteenth_note_gain));
+            time.triplets.forEach((time)=>setNote(time, triplets_note_gain));
+        });
+        return new_last_time;
+
+    };
     let timer = null;
     app.ports.newInterval.subscribe((new_interval)=>{
         interval = new_interval;
@@ -43,19 +56,9 @@
         interval = new_interval;
         if(timer == null){
             main_gain.gain.value = 1;
-            let last_time = audioCtx.currentTime;
-            setNote(last_time, head_note_gain);
-            setNote(last_time + interval / 2, eighth_note_gain);
+            let last_time = setNotes(audioCtx.currentTime - interval); //最初の音は捨てられてしまうため
             timer = setInterval(()=>{
-                const until = audioCtx.currentTime + 2;
-                const times = getRange(last_time, until, interval);
-                last_time = times.length == 0 ? last_time : times.slice(-1)[0].head[0] || last_time;
-                times.forEach((time)=>{
-                    time.head.forEach((time)=>setNote(time, head_note_gain));
-                    time.eighth.forEach((time)=>setNote(time, eighth_note_gain));
-                    time.sixteenth.forEach((time)=>setNote(time, sixteenth_note_gain));
-                    time.triplets.forEach((time)=>setNote(time, triplets_note_gain));
-                });
+                last_time = setNotes(last_time);
             }, 2);
         } else{
             main_gain.gain.value = 0;
@@ -64,8 +67,6 @@
         }
     });
     app.ports.newGains.subscribe((new_gains)=>{
-        console.log(new_gains);
-        console.log(new_gains.headGain / 100);
         head_note_gain.gain.value = new_gains.headGain / 100;
         eighth_note_gain.gain.value = new_gains.eighthGain / 100;
         sixteenth_note_gain.gain.value = new_gains.sixteenthGain / 100;
