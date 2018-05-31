@@ -19,13 +19,18 @@
     head_note_gain.gain.value = 1;
     head_note_gain.connect(main_gain);
     const eighth_note_gain = audioCtx.createGain();
-    eighth_note_gain.gain.value = 0.3;
+    eighth_note_gain.gain.value = 1;
     eighth_note_gain.connect(main_gain);
+    sixteenth_note_gain = audioCtx.createGain();
+    sixteenth_note_gain.gain.value = 1;
+    sixteenth_note_gain.connect(main_gain);
+    triplets_note_gain = audioCtx.createGain();
+    triplets_note_gain.gain.value = 1;
+    triplets_note_gain.connect(main_gain);
     let interval = null;
     const setNote = (when, connect_to) =>{
         const length = 0.1;
         const oscillator = audioCtx.createOscillator();
-        console.log(connect_to);
         oscillator.connect(connect_to);
         oscillator.start(when);
         oscillator.stop(when + length);
@@ -48,6 +53,8 @@
                 times.forEach((time)=>{
                     time.head.forEach((time)=>setNote(time, head_note_gain));
                     time.eighth.forEach((time)=>setNote(time, eighth_note_gain));
+                    time.sixteenth.forEach((time)=>setNote(time, sixteenth_note_gain));
+                    time.triplets.forEach((time)=>setNote(time, triplets_note_gain));
                 });
             }, 2);
         } else{
@@ -55,6 +62,15 @@
             clearInterval(timer);
             timer = null;
         }
+    });
+    app.ports.newGains.subscribe((new_gains)=>{
+        console.log(new_gains);
+        console.log(new_gains.headGain / 100);
+        head_note_gain.gain.value = new_gains.headGain / 100;
+        eighth_note_gain.gain.value = new_gains.eighthGain / 100;
+        sixteenth_note_gain.gain.value = new_gains.sixteenthGain / 100;
+        triplets_note_gain.gain.value = new_gains.tripletsGain / 100;
+
     });
     function getRange(start, stop, interval){
         const head_list = [];
@@ -71,7 +87,9 @@
     function getBeatsInBar(head_note_time, interval){
         return {
             head: [head_note_time],
-            eighth: [head_note_time + interval / 2]
+            eighth: [head_note_time + interval / 2],
+            sixteenth : [head_note_time + interval / 4, head_note_time + interval / 4 * 3],
+            triplets : [head_note_time + interval / 3, head_note_time + interval / 3 * 2]
         }
     }
 </script>
