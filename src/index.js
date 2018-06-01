@@ -1,4 +1,4 @@
-const {Elm} = require("./main");
+const Elm = require("./main.elm");
 const app = Elm.Main.fullscreen();
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
