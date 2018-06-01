@@ -166,45 +166,51 @@ subscriptions m =
 
 view : Model -> Html.Html Msg
 view model =
-    Html.ul [] <|
-        [ Html.li []
-            [ Html.text <| "BPM: " ++ (toString model.bpm) ]
-        , Html.li []
-            [ Html.button [ Html.Events.onClick Toggle ]
-                [ Html.text <|
-                    if model.isRunning then
-                        "stop"
-                    else
-                        "start"
+    Html.div []  
+        [
+        Html.ul [] 
+            [ Html.li []
+                [ Html.text <| "BPM: " ++ (toString model.bpm) ]
+            , Html.li []
+                [ Html.button [ Html.Events.onClick Toggle ]
+                    [ Html.text <|
+                        if model.isRunning then
+                            "stop"
+                        else
+                            "start"
+                    ]
                 ]
-            ]
-        , Html.li []
-            [ Html.button [ Html.Events.onClick Tap ] [ Html.text "tap" ]
-            ]
-        , Html.li []
-            [ Html.button
-                [ Html.Events.onClick <| BpmChange Up
-                , Html.Events.onMouseDown (BpmHold Up)
-                , Html.Events.onMouseUp BpmRelease
+            , Html.li []
+                [ Html.button [ Html.Events.onClick Tap ] [ Html.text "tap" ]
                 ]
-                [ Html.text "up" ]
-            ]
-        , Html.li []
-            [ Html.button
-                [ Html.Events.onClick <| BpmChange Down
-                , Html.Events.onMouseDown (BpmHold Down)
-                , Html.Events.onMouseUp BpmRelease
+            , Html.li []
+                [ Html.button
+                    [ Html.Events.onClick <| BpmChange Up
+                    , Html.Events.onMouseDown (BpmHold Up)
+                    , Html.Events.onMouseUp BpmRelease
+                    ]
+                    [ Html.text "up" ]
                 ]
-                [ Html.text "down" ]
-            ]
-        ]
-            ++ List.map
+            , Html.li []
+                [ Html.button
+                    [ Html.Events.onClick <| BpmChange Down
+                    , Html.Events.onMouseDown (BpmHold Down)
+                    , Html.Events.onMouseUp BpmRelease
+                    ]
+                    [ Html.text "down" ]
+                ]
+            ], 
+        Html.div [ Html.Attributes.class "volume_container"]  <|
+            List.map
                 (\t ->
-                    Html.li []
+                    Html.div
+                        [ Html.Attributes.class "volume_button"
+                        ]
                         [ Html.text <| noteTypeToString t
                         , Html.input
                             [ Html.Events.onInput <| GainChanged t
                             , Html.Attributes.type_ "range"
+                            , Html.Attributes.attribute "orient" "vertical"
                             , getVolume t model.gains |> toString |> Html.Attributes.value
                             ]
                             []
@@ -213,6 +219,8 @@ view model =
                 [ Head, Eighth, Sixteenth, Triplets ]
 
 
+
+    ]
 createDiffList : (number -> number -> number) -> List number -> List number
 createDiffList f lst =
     let
