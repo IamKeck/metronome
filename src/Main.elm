@@ -182,6 +182,7 @@ view model =
                                 , Html.Attributes.type_ "range"
                                 , Html.Attributes.attribute "orient" "vertical"
                                 , Html.Attributes.class "volume_slider"
+                                , getVolume t model.gains |> toString |> flip (++) "%" |> Html.Attributes.title
                                 , getVolume t model.gains |> toString |> Html.Attributes.value
                                 ]
                                 []
