@@ -1,65 +1,84 @@
 const Elm = require("./main.elm");
 const app = Elm.Main.fullscreen();
 
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-const main_gain = audioCtx.createGain();
-main_gain.connect(audioCtx.destination);
-const head_note_gain = audioCtx.createGain();
-head_note_gain.gain.value = 1;
-head_note_gain.connect(main_gain);
-const eighth_note_gain = audioCtx.createGain();
-eighth_note_gain.gain.value = 1;
-eighth_note_gain.connect(main_gain);
-sixteenth_note_gain = audioCtx.createGain();
-sixteenth_note_gain.gain.value = 1;
-sixteenth_note_gain.connect(main_gain);
-triplets_note_gain = audioCtx.createGain();
-triplets_note_gain.gain.value = 1;
-triplets_note_gain.connect(main_gain);
-let interval = null;
-const setNote = (when, connect_to) =>{
-    const length = 0.1;
-    const oscillator = audioCtx.createOscillator();
-    oscillator.connect(connect_to);
-    oscillator.start(when);
-    oscillator.stop(when + length);
-};
-const setNotes = (last_time) =>{
-    const until = audioCtx.currentTime + 2;
-    const times = getRange(last_time, until, interval);
-    const new_last_time = times.length == 0 ? last_time : times.slice(-1)[0].head[0] || last_time;
-    times.forEach((time)=>{
-        time.head.forEach((time)=>setNote(time, head_note_gain));
-        time.eighth.forEach((time)=>setNote(time, eighth_note_gain));
-        time.sixteenth.forEach((time)=>setNote(time, sixteenth_note_gain));
-        time.triplets.forEach((time)=>setNote(time, triplets_note_gain));
-    });
-    return new_last_time;
 
+const audio = {
+    ctx: new (window.AudioContext || window.webkitAudioContext)(),
+    main_gain: null,
+    head_note_gain: null,
+    eighth_note_gain: null,
+    sixteenth_note_gain: null,
+    triplets_note_gain: null,
+    lastSetHeadNote: 0,
+    interval: 0,
+    timer: null,
+
+    initialize(){
+        this.main_gain = this.ctx.createGain(),
+        this.head_note_gain = this.ctx.createGain(),
+        this.eighth_note_gain = this.ctx.createGain(),
+        this.sixteenth_note_gain = this.ctx.createGain(),
+        this.triplets_note_gain = this.ctx.createGain(),
+
+        this.main_gain.gain.value = 1
+        this.main_gain.connect(this.ctx.destination);
+        this.head_note_gain.connect(this.main_gain);
+        this.eighth_note_gain.connect(this.main_gain);
+        this.sixteenth_note_gain.connect(this.main_gain);
+        this.triplets_note_gain.connect(this.main_gain);
+    },
+    _setNote(when, connect_to){
+        const length = 0.1;
+        const oscillator = this.ctx.createOscillator();
+        oscillator.connect(connect_to);
+        oscillator.start(when);
+        oscillator.stop(when + length);
+    },
+    setNotes(from){
+        const until = this.ctx.currentTime + 2;
+        const times = getRange(from, until, this.interval);
+        this.lastSetHeadNote = times.length == 0 ? this.lastSetHeadNote : times.slice(-1)[0].head[0] || this.lastSetHeadNote;
+        times.forEach((time)=>{
+            time.head.forEach((time)=>this._setNote(time, this.head_note_gain));
+            time.eighth.forEach((time)=>this._setNote(time, this.eighth_note_gain));
+            time.sixteenth.forEach((time)=>this._setNote(time, this.sixteenth_note_gain));
+            time.triplets.forEach((time)=>this._setNote(time, this.triplets_note_gain));
+        });
+    },
+    setNewInterval(interval){
+        this.interval = interval;
+    },
+    toggle(){
+        if(this.timer == null){
+            this.main_gain.gain.value = 1;
+            this.setNotes(this.ctx.currentTime - this.interval); //最初の音は捨てられてしまうため
+            this.timer = setInterval(()=>{
+            this.setNotes(this.lastSetHeadNote);
+            }, 2);
+        } else{
+            this.main_gain.gain.value = 0;
+            clearInterval(this.timer);
+            this.timer = null;
+        }
+    },
+    setNewGains(new_gains){
+        this.head_note_gain.gain.value = new_gains.headGain / 100;
+        this.eighth_note_gain.gain.value = new_gains.eighthGain / 100;
+        this.sixteenth_note_gain.gain.value = new_gains.sixteenthGain / 100;
+        this.triplets_note_gain.gain.value = new_gains.tripletsGain / 100;
+    }
 };
-let timer = null;
+audio.initialize();
 app.ports.newInterval.subscribe((new_interval)=>{
-    interval = new_interval;
+    audio.setNewInterval(new_interval);
 });
 app.ports.toggle.subscribe((new_interval)=>{
-    interval = new_interval;
-    if(timer == null){
-        main_gain.gain.value = 1;
-        let last_time = setNotes(audioCtx.currentTime - interval); //最初の音は捨てられてしまうため
-        timer = setInterval(()=>{
-            last_time = setNotes(last_time);
-        }, 2);
-    } else{
-        main_gain.gain.value = 0;
-        clearInterval(timer);
-        timer = null;
-    }
+    audio.setNewInterval(new_interval);
+    audio.toggle();
+
 });
 app.ports.newGains.subscribe((new_gains)=>{
-    head_note_gain.gain.value = new_gains.headGain / 100;
-    eighth_note_gain.gain.value = new_gains.eighthGain / 100;
-    sixteenth_note_gain.gain.value = new_gains.sixteenthGain / 100;
-    triplets_note_gain.gain.value = new_gains.tripletsGain / 100;
+    audio.setNewGains(new_gains);
 
 });
 function getRange(start, stop, interval){
