@@ -1,4 +1,6 @@
 .idea/
 main.js
 elm-stuff
-
+node_modules/
+dist/
+*.log

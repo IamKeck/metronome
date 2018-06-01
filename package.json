@@ -1,0 +1,27 @@
+{
+  "name": "metronome",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-dev": "webpack --mode development --watch",
+    "build": "webpack --mode production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IamKeck/metronome.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/IamKeck/metronome/issues"
+  },
+  "homepage": "https://github.com/IamKeck/metronome#readme",
+  "devDependencies": {
+    "elm": "^0.18.0",
+    "elm-webpack-loader": "^4.5.0",
+    "webpack": "^4.10.2",
+    "webpack-cli": "^2.1.4"
+  }
+}
