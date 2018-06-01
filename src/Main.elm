@@ -166,9 +166,9 @@ subscriptions m =
 
 view : Model -> Html.Html Msg
 view model =
-    Html.div []
-        [ Html.div [ Html.Attributes.id "bpm" ]
-            [ Html.text <| "BPM: " ++ (toString model.bpm)
+    Html.div [ Html.Attributes.id "container" ]
+        [ Html.div [ Html.Attributes.id "bpm", Html.Attributes.class "box" ]
+            [ "BPM: " ++ (toString model.bpm) |> Html.text |> List.singleton |> Html.p []
             ]
         , Html.div [ Html.Attributes.id "controls" ]
             [ Html.div [ Html.Attributes.class "volume_container" ] <|
@@ -177,20 +177,26 @@ view model =
                         Html.div
                             [ Html.Attributes.class "volume_button"
                             ]
-                            [ Html.text <| noteTypeToString t
-                            , Html.input
+                            [ Html.input
                                 [ Html.Events.onInput <| GainChanged t
                                 , Html.Attributes.type_ "range"
                                 , Html.Attributes.attribute "orient" "vertical"
+                                , Html.Attributes.class "volume_slider"
                                 , getVolume t model.gains |> toString |> Html.Attributes.value
                                 ]
                                 []
+                            , Html.p [] [ Html.text <| noteTypeToString t ]
                             ]
                     )
                     [ Head, Eighth, Sixteenth, Triplets ]
-            , Html.ul []
+            , Html.ul [ Html.Attributes.id "control_buttons" ]
                 [ Html.li []
-                    [ Html.button [ Html.Events.onClick Toggle ]
+                    [ Html.button
+                        [ Html.Events.onClick Toggle
+                        , Html.Attributes.class "button"
+                        , Html.Attributes.class "is-primary"
+                        , Html.Attributes.class "is-large"
+                        ]
                         [ Html.text <|
                             if model.isRunning then
                                 "stop"
@@ -199,23 +205,35 @@ view model =
                         ]
                     ]
                 , Html.li []
-                    [ Html.button [ Html.Events.onClick Tap ] [ Html.text "tap" ]
+                    [ Html.button
+                        [ Html.Events.onClick Tap
+                        , Html.Attributes.class "button"
+                        , Html.Attributes.class "is-success"
+                        , Html.Attributes.class "is-large"
+                        ]
+                        [ Html.text "tap" ]
                     ]
                 , Html.li []
                     [ Html.button
                         [ Html.Events.onClick <| BpmChange Up
                         , Html.Events.onMouseDown (BpmHold Up)
                         , Html.Events.onMouseUp BpmRelease
+                        , Html.Attributes.class "button"
+                        , Html.Attributes.class "is-info"
+                        , Html.Attributes.class "is-large"
                         ]
-                        [ Html.text "up" ]
+                        [ Html.text "tempo up ▲" ]
                     ]
                 , Html.li []
                     [ Html.button
                         [ Html.Events.onClick <| BpmChange Down
                         , Html.Events.onMouseDown (BpmHold Down)
                         , Html.Events.onMouseUp BpmRelease
+                        , Html.Attributes.class "button"
+                        , Html.Attributes.class "is-link"
+                        , Html.Attributes.class "is-large"
                         ]
-                        [ Html.text "down" ]
+                        [ Html.text "tempo down ▼" ]
                     ]
                 ]
             ]

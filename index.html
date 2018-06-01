@@ -3,16 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <title>Metronome</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
     <style>
+        body{
+            margin-top: 60px;
+            margin-left: 90px;
+        }
+        #bpm{
+            width:360px;
+            font-size: 35px;
+        }
         #controls{
             display:flex;
             flex-direction: row;
+            height:360px;
         }
         .volume_container{
             display:flex;
+            font-size:25px;
         }
         .volume_button{
-            margin-right: 20px;
+            margin-right: 80px;
+        }
+        #control_buttons{
+            display:flex;
+            flex-direction: column;
+            font-size:25px;
+        }
+        #control_buttons .button{
+            margin-bottom:30px;
+            width:100%;
+        }
+        .volume_slider{
+            height:90%;
         }
     </style>
 </head>
