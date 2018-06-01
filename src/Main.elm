@@ -186,7 +186,11 @@ view model =
                                 , getVolume t model.gains |> toString |> Html.Attributes.value
                                 ]
                                 []
-                            , Html.p [] [ Html.text <| noteTypeToString t ]
+                            , Html.div
+                                [ Html.Attributes.class "note_glyph"
+                                , Html.Attributes.class <| noteTypeToClass t
+                                ]
+                                []
                             ]
                     )
                     [ Head, Eighth, Sixteenth, Triplets ]
@@ -285,20 +289,20 @@ newBpmAndTapList tapList =
                 ( Nothing, tapList )
 
 
-noteTypeToString : NoteType -> String
-noteTypeToString n =
+noteTypeToClass : NoteType -> String
+noteTypeToClass n =
     case n of
         Head ->
-            "♩"
+            "note_fourth"
 
         Eighth ->
-            "r ♪"
+            "note_eighth"
 
         Sixteenth ->
-            "16"
+            "note_sixteenth"
 
         Triplets ->
-            "3"
+            "note_triplets"
 
 
 getVolume : NoteType -> Gains -> Int
