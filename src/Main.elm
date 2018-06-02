@@ -1,6 +1,6 @@
 port module Main exposing (..)
 
-import Html exposing (program)
+import Html exposing (programWithFlags)
 import Html.Events
 import Html.Attributes
 import Time
@@ -17,6 +17,7 @@ type alias Model =
     , holdDirection : Maybe BpmDirection
     , holdBeginTime : Maybe Float
     , gains : Gains
+    , isTouchable : Bool
     }
 
 
@@ -67,20 +68,25 @@ holdInterval =
     500
 
 
-initialModel : Model
-initialModel =
-    { isRunning = False
-    , bpm = 120
-    , tapList = []
-    , holdDirection = Nothing
-    , holdBeginTime = Nothing
-    , gains =
-        { headGain = 100
-        , eighthGain = 0
-        , sixteenthGain = 0
-        , tripletsGain = 0
+init : Bool -> ( Model, Cmd Msg )
+init isTouchable =
+    let
+        initialGains =
+            { headGain = 100
+            , eighthGain = 0
+            , sixteenthGain = 0
+            , tripletsGain = 0
+            }
+    in
+        { isRunning = False
+        , bpm = 120
+        , tapList = []
+        , holdDirection = Nothing
+        , holdBeginTime = Nothing
+        , gains = initialGains
+        , isTouchable = isTouchable
         }
-    }
+            ! [ newGains initialGains ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -149,9 +155,9 @@ update msg model =
                 { model | gains = changedGains } ! [ newGains changedGains ]
 
 
-main : Program Never Model Msg
+main : Program Bool Model Msg
 main =
-    program { init = initialModel ! [ newGains initialModel.gains ], update = update, subscriptions = subscriptions, view = view }
+    programWithFlags { init = init, update = update, subscriptions = subscriptions, view = view }
 
 
 subscriptions : Model -> Sub Msg

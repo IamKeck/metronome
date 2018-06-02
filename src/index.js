@@ -1,5 +1,16 @@
 const Elm = require("./main.elm");
-const app = Elm.Main.fullscreen();
+const is_touchable = (function(){
+    var ua = navigator.userAgent;
+    if(ua.indexOf('iPhone') > 0 || ua.indexOf('iPod') > 0 || ua.indexOf('Android') > 0 && ua.indexOf('Mobile') > 0){
+        return true;
+    }else if(ua.indexOf('iPad') > 0 || ua.indexOf('Android') > 0){
+        return true;
+    }else{
+        return false;
+    }
+})();
+console.log(is_touchable);
+const app = Elm.Main.fullscreen(is_touchable);
 
 
 const audio = {
