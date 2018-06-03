@@ -233,7 +233,7 @@ view model =
                         , Html.Attributes.class "is-info"
                         , Html.Attributes.class "is-large"
                         ]
-                        [ Html.text "tempo up ▲" ]
+                        [ Html.text "tempo ▲" ]
                     ]
                 , Html.li []
                     [ Html.button
@@ -244,7 +244,7 @@ view model =
                         , Html.Attributes.class "is-link"
                         , Html.Attributes.class "is-large"
                         ]
-                        [ Html.text "tempo down ▼" ]
+                        [ Html.text "tempo ▼" ]
                     ]
                 ]
             ]
