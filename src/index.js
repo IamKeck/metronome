@@ -9,7 +9,12 @@ const is_touchable = (function(){
         return false;
     }
 })();
-console.log(is_touchable);
+
+//タップにより画面が拡大されてしまうことを防ぐ
+document.body.addEventListener("touchend", function(e){
+    e.preventDefault();
+});
+
 const app = Elm.Main.fullscreen(is_touchable);
 
 
