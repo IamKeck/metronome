@@ -64,17 +64,24 @@ const audio = {
     setNewInterval(interval){
         this.interval = interval;
     },
+    _start(){
+        this.main_gain.gain.value = 1;
+        this.setNotes(this.ctx.currentTime - this.interval); //最初の音は捨てられてしまうため
+        this.timer = setInterval(()=>{
+        this.setNotes(this.lastSetHeadNote);
+        }, 2);
+    },
+    _stop(){
+        this.main_gain.gain.value = 0;
+        clearInterval(this.timer);
+        this.timer = null;
+
+    },
     toggle(){
         if(this.timer == null){
-            this.main_gain.gain.value = 1;
-            this.setNotes(this.ctx.currentTime - this.interval); //最初の音は捨てられてしまうため
-            this.timer = setInterval(()=>{
-            this.setNotes(this.lastSetHeadNote);
-            }, 2);
+            this._start();
         } else{
-            this.main_gain.gain.value = 0;
-            clearInterval(this.timer);
-            this.timer = null;
+            this._stop();
         }
     },
     setNewGains(new_gains){
