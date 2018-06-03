@@ -8,6 +8,7 @@ import Result
 import Task
 import String
 import Process
+import Json.Decode
 
 
 type alias Model =
@@ -124,13 +125,26 @@ update msg model =
                 { model | bpm = newBpm } ! [ bpmToInterval newBpm |> newInterval ]
 
         BpmHold d ->
-            model
-                ! [ Process.sleep (holdInterval * Time.millisecond) |> Task.andThen (always Time.now) |> Task.perform (GotHoldJudgeTime d)
-                  , Time.now |> Task.perform GotHoldBeginTime
-                  ]
+            let
+                newBpm =
+                    case d of
+                        Up ->
+                            model.bpm + 1 |> min maxBpm
+
+                        Down ->
+                            model.bpm - 1 |> max 0
+            in
+                { model | bpm = newBpm }
+                    ! [ Process.sleep (holdInterval * Time.millisecond)
+                            |> Task.andThen (always Time.now)
+                            |> Task.perform (GotHoldJudgeTime d)
+                      , Time.now |> Task.perform GotHoldBeginTime
+                      , bpmToInterval newBpm |> newInterval
+                      ]
 
         BpmRelease ->
-            { model | holdDirection = Nothing, holdBeginTime = Nothing } ! []
+            { model | holdDirection = Nothing, holdBeginTime = Nothing }
+                ! []
 
         GotHoldBeginTime f ->
             { model | holdBeginTime = Just f } ! []
@@ -170,6 +184,36 @@ subscriptions m =
             Sub.none
 
 
+getMouseDownEvent : Bool -> Msg -> Html.Attribute Msg
+getMouseDownEvent isTouchable msg =
+    case isTouchable of
+        True ->
+            Html.Events.on "touchstart" (Json.Decode.succeed msg)
+
+        False ->
+            Html.Events.onMouseDown msg
+
+
+getMouseUpEvent : Bool -> Msg -> Html.Attribute Msg
+getMouseUpEvent isTouchable msg =
+    case isTouchable of
+        True ->
+            Html.Events.on "touchend" (Json.Decode.succeed msg)
+
+        False ->
+            Html.Events.onMouseUp msg
+
+
+getClickEvent : Bool -> Msg -> Html.Attribute Msg
+getClickEvent isTouchable msg =
+    case isTouchable of
+        True ->
+            Html.Events.on "touchend" (Json.Decode.succeed msg)
+
+        False ->
+            Html.Events.onClick msg
+
+
 view : Model -> Html.Html Msg
 view model =
     Html.div [ Html.Attributes.id "container" ]
@@ -203,7 +247,7 @@ view model =
             , Html.ul [ Html.Attributes.id "control_buttons" ]
                 [ Html.li []
                     [ Html.button
-                        [ Html.Events.onClick Toggle
+                        [ getClickEvent model.isTouchable Toggle
                         , Html.Attributes.class "button"
                         , Html.Attributes.class "is-primary"
                         , Html.Attributes.class "is-large"
@@ -217,7 +261,7 @@ view model =
                     ]
                 , Html.li []
                     [ Html.button
-                        [ Html.Events.onClick Tap
+                        [ getMouseDownEvent model.isTouchable Tap
                         , Html.Attributes.class "button"
                         , Html.Attributes.class "is-success"
                         , Html.Attributes.class "is-large"
@@ -226,9 +270,8 @@ view model =
                     ]
                 , Html.li []
                     [ Html.button
-                        [ Html.Events.onClick <| BpmChange Up
-                        , Html.Events.onMouseDown (BpmHold Up)
-                        , Html.Events.onMouseUp BpmRelease
+                        [ getMouseDownEvent model.isTouchable <| BpmHold Up
+                        , getMouseUpEvent model.isTouchable BpmRelease
                         , Html.Attributes.class "button"
                         , Html.Attributes.class "is-info"
                         , Html.Attributes.class "is-large"
@@ -237,9 +280,8 @@ view model =
                     ]
                 , Html.li []
                     [ Html.button
-                        [ Html.Events.onClick <| BpmChange Down
-                        , Html.Events.onMouseDown (BpmHold Down)
-                        , Html.Events.onMouseUp BpmRelease
+                        [ getMouseDownEvent model.isTouchable <| BpmHold Down
+                        , getMouseUpEvent model.isTouchable BpmRelease
                         , Html.Attributes.class "button"
                         , Html.Attributes.class "is-link"
                         , Html.Attributes.class "is-large"
