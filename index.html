@@ -10,6 +10,7 @@
             width: 90vw;
             height:90vh;
             margin:5vh 5vw;
+            max-width: 730px;
         }
         #bpm{
             font-size: 35px;
@@ -29,20 +30,51 @@
         }
         #control_buttons{
             display:flex;
-            flex-direction: row;
             justify-content: space-between;
             font-size:25px;
             flex-wrap: wrap;
         }
         #control_buttons .button{
             margin-bottom:30px;
-            width: 42vw;
         }
         .volume_slider{
             height:70%;
             width:75px;
             writing-mode: bt-lr; /* IE */
             -webkit-appearance: slider-vertical; /* WebKit */
+        }
+
+        @media screen and (min-width:300px){
+            #controls{
+                flex-direction: column;
+            }
+            #control_buttons{
+                flex-direction: row;
+            }
+
+            #control_buttons .button{
+                width: 43vw;
+            }
+            .volume_container{
+                margin-bottom: 60px;
+            }
+        }
+        @media screen and (min-width:600px){
+            #controls{
+                flex-direction: row;
+            }
+            #control_buttons{
+                flex-direction: column;
+                margin-bottom: 5%;
+                width: 50%;
+            }
+            #control_buttons .button{
+                width: 100%
+            }
+            .volume_container{
+                margin: 0;
+            }
+
         }
         input[type=range]::-webkit-slider-thumb {
             width: 25px;
