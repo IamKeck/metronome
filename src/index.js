@@ -64,6 +64,7 @@ const audio = {
     },
     setNewInterval(interval){
         this.interval = interval;
+        this.timerInterval = getTimerInterval(interval);
     },
     _start(){
         this.main_gain.gain.value = 1;
@@ -105,6 +106,12 @@ app.ports.newGains.subscribe((new_gains)=>{
     audio.setNewGains(new_gains);
 
 });
+
+function getTimerInterval(interval){
+    const timer_interval = Math.ceil(interval);
+    return timer_interval <= 2 ? timer_interval : timer_interval;
+
+}
 function getRange(start, stop, interval){
     const head_list = [];
     let current_time = start;
