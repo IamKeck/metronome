@@ -27,6 +27,7 @@ const audio = {
     triplets_note_gain: null,
     lastSetHeadNote: 0,
     interval: 0,
+    timerInterval: 2,
     timer: null,
 
     initialize(){
@@ -51,7 +52,7 @@ const audio = {
         oscillator.stop(when + length);
     },
     setNotes(from){
-        const until = this.ctx.currentTime + 2;
+        const until = this.ctx.currentTime + this.timerInterval;
         const times = getRange(from, until, this.interval);
         this.lastSetHeadNote = times.length == 0 ? this.lastSetHeadNote : times.slice(-1)[0].head[0] || this.lastSetHeadNote;
         times.forEach((time)=>{
@@ -69,7 +70,7 @@ const audio = {
         this.setNotes(this.ctx.currentTime - this.interval); //最初の音は捨てられてしまうため
         this.timer = setInterval(()=>{
         this.setNotes(this.lastSetHeadNote);
-        }, 2);
+    }, this.timerInterval);
     },
     _stop(){
         this.main_gain.gain.value = 0;
