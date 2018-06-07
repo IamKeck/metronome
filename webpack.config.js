@@ -1,6 +1,6 @@
 const SWPrecacheWebpackPlugin = require('sw-precache-webpack-plugin');
- 
-const PUBLIC_PATH = 'https://metronome.keckserver.xyz/'; 
+
+const PUBLIC_PATH = 'https://metronome.keckserver.xyz/';
 
 module.exports = {
     entry: "./src/index.js",
@@ -13,20 +13,27 @@ module.exports = {
                 test:    /\.elm$/,
                 exclude: [/elm-stuff/, /node_modules/],
                 loader:  'elm-webpack-loader?verbose=true&warn=true',
-              },
+            },
         ]
     },
     plugins: [
-	new SWPrecacheWebpackPlugin(
-	      {
-		cacheId: 'metronome',
-		dontCacheBustUrlsMatching: /\.\w{8}\./,
-		filename: 'service-worker.js',
-		minify: true,
-		navigateFallback: PUBLIC_PATH + 'index.html',
-		staticFileGlobsIgnorePatterns: [/\.map$/, /asset-manifest\.json$/],
-				            }
-			    ),
+        new SWPrecacheWebpackPlugin(
+            {
+                cacheId: 'metronome',
+                dontCacheBustUrlsMatching: /\.\w{8}\./,
+                filename: 'service-worker.js',
+                minify: true,
+                navigateFallback: PUBLIC_PATH + 'index.html',
+                staticFileGlobsIgnorePatterns: [/\.map$/, /asset-manifest\.json$/],
+                runtimeCaching: [
+                    {
+                        urlPattern: /https:\/\/cdnjs\.cloudflare\.com/,
+                        handler: "cacheFirst"
+
+                    }
+                ]
+            },
+        ),
     ]
 
 }
