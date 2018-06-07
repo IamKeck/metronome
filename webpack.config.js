@@ -32,7 +32,7 @@ module.exports = {
                 ],
                 runtimeCaching: [
                     {
-                        urlPattern: /https:\/\/cdnjs\.cloudflare\.com/,
+                        urlPattern: /^https:\/\/cdnjs\.cloudflare\.com/,
                         handler: "cacheFirst"
 
                     }
