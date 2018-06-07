@@ -25,6 +25,11 @@ module.exports = {
                 minify: true,
                 navigateFallback: PUBLIC_PATH + 'index.html',
                 staticFileGlobsIgnorePatterns: [/\.map$/, /asset-manifest\.json$/],
+                staticFileGlobs:[
+                    "dist/index.js",
+                    "style.css",
+                    "index.html"
+                ],
                 runtimeCaching: [
                     {
                         urlPattern: /https:\/\/cdnjs\.cloudflare\.com/,
