@@ -20,18 +20,18 @@ module.exports = {
         new SWPrecacheWebpackPlugin(
             {
                 cacheId: 'metronome',
+                filepath: "./service-worker.js",
                 dontCacheBustUrlsMatching: /\.\w{8}\./,
                 filename: 'service-worker.js',
                 minify: true,
                 navigateFallback: PUBLIC_PATH + 'index.html',
                 staticFileGlobsIgnorePatterns: [/\.map$/, /asset-manifest\.json$/],
                 staticFileGlobs:[
-                    "./dist/index.js",
-                    "./style.css",
-                    "./index.html",
-                    "./*.svg"
+                    "dist/index.js",
+                    "style.css",
+                    "index.html",
+                    "*.svg"
                 ],
-                stripPrefix: ".",
                 runtimeCaching: [
                     {
                         urlPattern: /^https:\/\/cdnjs\.cloudflare\.com/,
