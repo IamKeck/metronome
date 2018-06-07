@@ -26,9 +26,10 @@ module.exports = {
                 navigateFallback: PUBLIC_PATH + 'index.html',
                 staticFileGlobsIgnorePatterns: [/\.map$/, /asset-manifest\.json$/],
                 staticFileGlobs:[
-                    "dist/index.js",
-                    "style.css",
-                    "index.html"
+                    "/dist/index.js",
+                    "/style.css",
+                    "/index.html",
+                    "/*.svg"
                 ],
                 runtimeCaching: [
                     {
