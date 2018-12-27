@@ -1,7 +1,15 @@
 .idea/
 main.js
 elm-stuff
-node_modules/
+/node_modules/
 dist/
-*.log
+*.log/
 .vscode/
+/bower_components/
+/.pulp-cache/
+/output/
+/generated-docs/
+/.psc-package/
+/.psc*
+/.purs*
+/.psa*
