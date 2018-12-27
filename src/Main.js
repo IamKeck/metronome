@@ -1,0 +1,21 @@
+"use strict";
+
+exports.elmSubscribeImpl = function(portName, elmApp, callback){
+    return function(){
+        if(elmApp.ports[portName] !== undefined){
+            elmApp.ports[portName].subscribe(function(arg){
+                callback(arg)
+            });
+        }
+    };
+};
+
+exports.elmFullScreenImpl = function(just, nothing){
+    return function(){
+        if(window.Elm){
+            var app = Elm.Main.fullscreen(is_touchable);
+            return just(app);
+        }
+        return nothing;
+    };
+};
