@@ -4,7 +4,7 @@ exports.elmSubscribeImpl = function(portName, elmApp, callback){
     return function(){
         if(elmApp.ports[portName] !== undefined){
             elmApp.ports[portName].subscribe(function(arg){
-                callback(arg)
+                callback(arg)();
             });
         }
     };

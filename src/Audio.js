@@ -1,10 +1,8 @@
 "use strict";
 
 exports.getAudioContext = function(){
-    return function(){
         return new (window.AudioContext || window.webkitAudioContext)();
     };
-};
 
 exports.createGain = function(ctx){
     return function(){
@@ -28,7 +26,7 @@ exports.gainConnectToGainImpl = function(gain, destGain, unit){
 
 exports.createOscillator = function(ctx){
     return function(){
-        return this.ctx.createOscillator();
+        return ctx.createOscillator();
     };
 };
 
@@ -39,16 +37,20 @@ exports.oscillatorConnectToGainImpl = function(o, g, unit){
     };
 }
 
-exports.startOscillatorImpl = function(o, unit){
+exports.startOscillatorImpl = function(n, o, unit){
     return function(){
-        o.start();
+        if(n == 0){
+            o.start();
+        } else{
+            o.start(n);
+        }
         return unit;
     };
 };
 
-exports.stopOscillatorImpl = function(o, unit){
+exports.stopOscillatorImpl = function(n, o, unit){
     return function(){
-        o.stop();
+        o.stop(n);
         return unit;
     };
 };
@@ -57,5 +59,11 @@ exports.setGainValueImpl = function(val, gain, unit){
     return function(){
         gain.gain.value = val;
         return unit;
+    };
+};
+
+exports.getCurrentTime = function(ctx){
+    return function(){
+        return ctx.currentTime;
     };
 };
