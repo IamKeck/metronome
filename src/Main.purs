@@ -3,16 +3,20 @@ module Main where
 import Prelude
 
 import Audio (AudioContext, GainNode, createGain, createOscillator, gainConnectToContext, gainConnectToGain, getAudioContext, getCurrentTime, oscillatorConnectToGain, setGainValue, startOscillator, stopOscillator)
-import Data.Array (cons, head, last, reverse, singleton, tail)
+import Data.Array (any, cons, head, last, reverse, singleton, tail)
 import Data.Function.Uncurried (Fn3, runFn3)
 import Data.Int (ceil, toNumber)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String.Utils (includes)
 import Data.Traversable (for)
 import Effect (Effect)
 import Effect.Console (log)
 import Effect.Ref (Ref, modify, new, read, write)
 import Effect.Timer (IntervalId, clearInterval, setInterval)
 import Foreign (Foreign, unsafeFromForeign, unsafeToForeign)
+import Web.HTML (window)
+import Web.HTML.Navigator (userAgent)
+import Web.HTML.Window (navigator)
 
 type PortName = String
 foreign import data ElmApp :: Type
@@ -27,6 +31,7 @@ elmSubscribe ::
 elmSubscribe p e c = runFn3 elmSubscribeImpl p e callback
   where
     callback v = c $ unsafeFromForeign v
+
 
 type Gains =
     { headGain :: Int
@@ -45,6 +50,7 @@ type BeatsInBeat =
 type Interval = Number
 type TimerInterval = Int
 type Time = Number
+type UserAgent = String
 
 -- pure functions
 
@@ -198,9 +204,17 @@ setNewGains g m = do
     setGainValue (toNumber g.tripletsGain / 100.0) m.tripletsNoteGain
 
 
+getUserAgent :: Effect UserAgent
+getUserAgent = window >>= navigator >>= userAgent
+
+isTouchable :: UserAgent -> Boolean
+isTouchable ua = any (_ `includes` ua) touchableList
+  where
+    touchableList = ["iPhone", "iPod", "Android", "Mobile", "iPad"]
+
 main :: Effect Unit
 main = do
-
+  touchable <- isTouchable <$> getUserAgent
   mayElm <- elmDocument $ unsafeToForeign false
   case mayElm of
     Nothing ->

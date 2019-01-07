@@ -20,7 +20,9 @@
     "purescript-arrays": "^5.2.0",
     "purescript-js-timers": "^4.0.1",
     "purescript-foldable-traversable": "^4.1.1",
-    "purescript-refs": "^4.1.0"
+    "purescript-refs": "^4.1.0",
+    "purescript-web-html": "^1.2.0",
+    "purescript-stringutils": "^0.0.8"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0"
