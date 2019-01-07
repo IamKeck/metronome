@@ -16,11 +16,11 @@ import Foreign (Foreign, unsafeFromForeign, unsafeToForeign)
 
 type PortName = String
 foreign import data ElmApp :: Type
-foreign import elmFullScreenImpl :: Fn3 Foreign (ElmApp -> Maybe ElmApp) (Maybe ElmApp) (Effect (Maybe ElmApp))
+foreign import elmDocumentImpl :: Fn3 Foreign (ElmApp -> Maybe ElmApp) (Maybe ElmApp) (Effect (Maybe ElmApp))
 foreign import elmSubscribeImpl :: Fn3 PortName ElmApp (Foreign -> Effect Unit) (Effect Unit)
 
-elmFullScreen :: Foreign ->  Effect (Maybe ElmApp)
-elmFullScreen flag = runFn3 elmFullScreenImpl flag Just Nothing
+elmDocument :: Foreign ->  Effect (Maybe ElmApp)
+elmDocument flag = runFn3 elmDocumentImpl flag Just Nothing
 
 elmSubscribe :: 
   forall a. PortName -> ElmApp ->  (a -> Effect Unit) -> Effect Unit
@@ -201,7 +201,7 @@ setNewGains g m = do
 main :: Effect Unit
 main = do
 
-  mayElm <- elmFullScreen $ unsafeToForeign false
+  mayElm <- elmDocument $ unsafeToForeign false
   case mayElm of
     Nothing ->
       log "no elm"

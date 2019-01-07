@@ -10,10 +10,10 @@ exports.elmSubscribeImpl = function(portName, elmApp, callback){
     };
 };
 
-exports.elmFullScreenImpl = function(flag, just, nothing){
+exports.elmDocumentImpl = function(flag, just, nothing){
     return function(){
         if(window.Elm){
-            var app = Elm.Main.fullscreen(flag);
+            var app = Elm.Main.init({flags: flag});
             return just(app);
         }
         return nothing;

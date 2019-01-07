@@ -1,14 +1,16 @@
-port module Main exposing (..)
+port module Main exposing (BpmDirection(..), Gains, Model, Msg(..), NoteType(..), bpmToInterval, createDiffList, defaultBpm, getClickEvent, getMouseDownEvent, getMouseUpEvent, getVolume, holdInterval, init, intervalToBpm, main, maxBpm, newBpmAndTapList, newGains, newInterval, noteTypeToClass, setVolume, subscriptions, toggle, update, view)
 
-import Html exposing (programWithFlags)
-import Html.Events
+import Html
 import Html.Attributes
-import Time
-import Result
-import Task
-import String
-import Process
+import Html.Events
 import Json.Decode
+import Process
+import Result
+import String
+import Task
+import Time
+import Maybe
+import Browser
 
 
 type alias Model =
@@ -79,25 +81,30 @@ init isTouchable =
             , tripletsGain = 0
             }
     in
-        { isRunning = False
-        , bpm = 120
-        , tapList = []
-        , holdDirection = Nothing
-        , holdBeginTime = Nothing
-        , gains = initialGains
-        , isTouchable = isTouchable
-        }
-            ! [ newGains initialGains ]
+    ( { isRunning = False
+      , bpm = 120
+      , tapList = []
+      , holdDirection = Nothing
+      , holdBeginTime = Nothing
+      , gains = initialGains
+      , isTouchable = isTouchable
+      }
+    , newGains initialGains
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Toggle ->
-            { model | isRunning = not model.isRunning } ! [ bpmToInterval model.bpm |> toggle ]
+            ( { model | isRunning = not model.isRunning }
+            , bpmToInterval model.bpm |> toggle
+            )
 
         Tap ->
-            model ! [ Time.now |> Task.perform TapTime ]
+            ( model
+            , Time.now |> Task.map (Time.posixToMillis >> toFloat >> \x -> x / 1000) |> Task.perform TapTime
+            )
 
         TapTime t ->
             let
@@ -110,7 +117,9 @@ update msg model =
                 bpm =
                     Maybe.withDefault model.bpm newBpm |> min maxBpm
             in
-                { model | bpm = bpm, tapList = newList } ! [ bpmToInterval bpm |> newInterval ]
+            ( { model | bpm = bpm, tapList = newList }
+            , bpmToInterval bpm |> newInterval
+            )
 
         BpmChange d ->
             let
@@ -122,7 +131,9 @@ update msg model =
                         Down ->
                             model.bpm - 1 |> max 0
             in
-                { model | bpm = newBpm } ! [ bpmToInterval newBpm |> newInterval ]
+            ( { model | bpm = newBpm }
+            , bpmToInterval newBpm |> newInterval
+            )
 
         BpmHold d ->
             let
@@ -134,51 +145,60 @@ update msg model =
                         Down ->
                             model.bpm - 1 |> max 0
             in
-                { model | bpm = newBpm }
-                    ! [ Process.sleep (holdInterval * Time.millisecond)
-                            |> Task.andThen (always Time.now)
-                            |> Task.perform (GotHoldJudgeTime d)
-                      , Time.now |> Task.perform GotHoldBeginTime
-                      , bpmToInterval newBpm |> newInterval
-                      ]
+            ( { model | bpm = newBpm }
+            , Cmd.batch
+                [ Process.sleep holdInterval
+                    |> Task.andThen (always Time.now)
+                    |> Task.map (Time.posixToMillis >> toFloat)
+                    |> Task.perform (GotHoldJudgeTime d)
+                , Time.now |> Task.map (Time.posixToMillis >> toFloat) |>Task.perform GotHoldBeginTime
+                , bpmToInterval newBpm |> newInterval
+                ]
+            )
 
         BpmRelease ->
-            { model | holdDirection = Nothing, holdBeginTime = Nothing }
-                ! []
+            ( { model | holdDirection = Nothing, holdBeginTime = Nothing }
+            , Cmd.none
+            )
 
         GotHoldBeginTime f ->
-            { model | holdBeginTime = Just f } ! []
+            ( { model | holdBeginTime = Just f }
+            , Cmd.none
+            )
 
         GotHoldJudgeTime d f ->
-            { model
+            ( { model
                 | holdDirection =
-                    if (Maybe.map ((-) f >> flip (>) (holdInterval * 0.7)) model.holdBeginTime |> Maybe.withDefault False) then
+                    if Maybe.map ((-) f >> (\a -> (>) a (holdInterval * 0.7))) model.holdBeginTime |> Maybe.withDefault False then
                         Just d
+
                     else
                         Nothing
-            }
-                ! []
+              }
+            , Cmd.none
+            )
 
         GainChanged t v ->
             let
                 changedGains =
                     String.toInt v
-                        |> Result.map (setVolume t model.gains)
-                        |> Result.withDefault model.gains
+                        |> Maybe.map (setVolume t model.gains)
+                        |> Maybe.withDefault model.gains
             in
-                { model | gains = changedGains } ! [ newGains changedGains ]
+            ( { model | gains = changedGains }
+            , newGains changedGains
+            )
 
 
-main : Program Bool Model Msg
 main =
-    programWithFlags { init = init, update = update, subscriptions = subscriptions, view = view }
+    Browser.document { init = init, update = update, subscriptions = subscriptions, view = view }
 
 
 subscriptions : Model -> Sub Msg
 subscriptions m =
     case m.holdDirection of
         Just d ->
-            Time.every (20 * Time.millisecond) (always (BpmChange d))
+            Time.every 20 (always (BpmChange d))
 
         Nothing ->
             Sub.none
@@ -214,83 +234,90 @@ getClickEvent isTouchable msg =
             Html.Events.onClick msg
 
 
-view : Model -> Html.Html Msg
+view : Model -> Browser.Document Msg
 view model =
-    Html.div [ Html.Attributes.id "container" ]
-        [ Html.div [ Html.Attributes.id "bpm", Html.Attributes.class "box" ]
-            [ "BPM: " ++ (toString model.bpm) |> Html.text |> List.singleton |> Html.p []
-            ]
-        , Html.div [ Html.Attributes.id "controls" ]
-            [ Html.div [ Html.Attributes.class "volume_container" ] <|
-                List.map
-                    (\t ->
-                        Html.div
-                            [ Html.Attributes.class "volume_button"
-                            ]
-                            [ Html.input
-                                [ Html.Events.onInput <| GainChanged t
-                                , Html.Attributes.type_ "range"
-                                , Html.Attributes.attribute "orient" "vertical"
-                                , Html.Attributes.class "volume_slider"
-                                , getVolume t model.gains |> toString |> flip (++) "%" |> Html.Attributes.title
-                                , getVolume t model.gains |> toString |> Html.Attributes.value
+    { title = "Metronome"
+    , body = [
+        Html.div [ Html.Attributes.id "container" ]
+            [ Html.div [ Html.Attributes.id "bpm", Html.Attributes.class "box" ]
+                [ "BPM: " ++ String.fromInt model.bpm |> Html.text |> List.singleton |> Html.p []
+                ]
+            , Html.div [ Html.Attributes.id "controls" ]
+                [ Html.div [ Html.Attributes.class "volume_container" ] <|
+                    List.map
+                        (\t ->
+                            Html.div
+                                [ Html.Attributes.class "volume_button"
                                 ]
-                                []
-                            , Html.div
-                                [ Html.Attributes.class "note_glyph"
-                                , Html.Attributes.class <| noteTypeToClass t
+                                [ Html.input
+                                    [ Html.Events.onInput <| GainChanged t
+                                    , Html.Attributes.type_ "range"
+                                    , Html.Attributes.attribute "orient" "vertical"
+                                    , Html.Attributes.class "volume_slider"
+                                    , getVolume t model.gains |> String.fromInt |> (\a -> (++) a "%") |> Html.Attributes.title
+                                    , getVolume t model.gains |> String.fromInt |> Html.Attributes.value
+                                    ]
+                                    []
+                                , Html.div
+                                    [ Html.Attributes.class "note_glyph"
+                                    , Html.Attributes.class <| noteTypeToClass t
+                                    ]
+                                    []
                                 ]
-                                []
+                        )
+                        [ Head, Eighth, Sixteenth, Triplets ]
+                , Html.ul [ Html.Attributes.id "control_buttons" ]
+                    [ Html.li []
+                        [ Html.button
+                            [ getClickEvent model.isTouchable Toggle
+                            , Html.Attributes.class "button"
+                            , Html.Attributes.class "is-primary"
+                            , Html.Attributes.class "is-large"
                             ]
-                    )
-                    [ Head, Eighth, Sixteenth, Triplets ]
-            , Html.ul [ Html.Attributes.id "control_buttons" ]
-                [ Html.li []
-                    [ Html.button
-                        [ getClickEvent model.isTouchable Toggle
-                        , Html.Attributes.class "button"
-                        , Html.Attributes.class "is-primary"
-                        , Html.Attributes.class "is-large"
+                            [ Html.text <|
+                                if model.isRunning then
+                                    "stop"
+
+                                else
+                                    "start"
+                            ]
                         ]
-                        [ Html.text <|
-                            if model.isRunning then
-                                "stop"
-                            else
-                                "start"
+                    , Html.li []
+                        [ Html.button
+                            [ getMouseDownEvent model.isTouchable Tap
+                            , Html.Attributes.class "button"
+                            , Html.Attributes.class "is-success"
+                            , Html.Attributes.class "is-large"
+                            ]
+                            [ Html.text "tap" ]
                         ]
-                    ]
-                , Html.li []
-                    [ Html.button
-                        [ getMouseDownEvent model.isTouchable Tap
-                        , Html.Attributes.class "button"
-                        , Html.Attributes.class "is-success"
-                        , Html.Attributes.class "is-large"
+                    , Html.li []
+                        [ Html.button
+                            [ getMouseDownEvent model.isTouchable <| BpmHold Up
+                            , getMouseUpEvent model.isTouchable BpmRelease
+                            , Html.Attributes.class "button"
+                            , Html.Attributes.class "is-info"
+                            , Html.Attributes.class "is-large"
+                            ]
+                            [ Html.text "tempo ▲" ]
                         ]
-                        [ Html.text "tap" ]
-                    ]
-                , Html.li []
-                    [ Html.button
-                        [ getMouseDownEvent model.isTouchable <| BpmHold Up
-                        , getMouseUpEvent model.isTouchable BpmRelease
-                        , Html.Attributes.class "button"
-                        , Html.Attributes.class "is-info"
-                        , Html.Attributes.class "is-large"
+                    , Html.li []
+                        [ Html.button
+                            [ getMouseDownEvent model.isTouchable <| BpmHold Down
+                            , getMouseUpEvent model.isTouchable BpmRelease
+                            , Html.Attributes.class "button"
+                            , Html.Attributes.class "is-link"
+                            , Html.Attributes.class "is-large"
+                            ]
+                            [ Html.text "tempo ▼" ]
                         ]
-                        [ Html.text "tempo ▲" ]
-                    ]
-                , Html.li []
-                    [ Html.button
-                        [ getMouseDownEvent model.isTouchable <| BpmHold Down
-                        , getMouseUpEvent model.isTouchable BpmRelease
-                        , Html.Attributes.class "button"
-                        , Html.Attributes.class "is-link"
-                        , Html.Attributes.class "is-large"
-                        ]
-                        [ Html.text "tempo ▼" ]
                     ]
                 ]
             ]
+
         ]
+
+    }
 
 
 createDiffList : (number -> number -> number) -> List number -> List number
@@ -302,14 +329,14 @@ createDiffList f lst =
                     accAndList
 
                 x :: xs ->
-                    { acc = (f item x :: accAndList.acc), list = xs }
+                    { acc = f item x :: accAndList.acc, list = xs }
     in
-        case lst of
-            [] ->
-                []
+    case lst of
+        [] ->
+            []
 
-            x :: xs ->
-                List.foldl folder { acc = [], list = xs } lst |> .acc |> List.reverse
+        x :: xs ->
+            List.foldl folder { acc = [], list = xs } lst |> .acc |> List.reverse
 
 
 intervalToBpm : Float -> Int
@@ -319,22 +346,24 @@ intervalToBpm f =
 
 bpmToInterval : Int -> Float
 bpmToInterval b =
-    60 / (toFloat b)
+    60 / toFloat b
 
 
 newBpmAndTapList : List Float -> ( Maybe Int, List Float )
 newBpmAndTapList tapList =
     if List.length tapList < 3 then
         ( Nothing, tapList )
+
     else
         let
             diffList =
                 createDiffList (-) tapList |> List.take 3
         in
-            if List.all (\x -> x < 6000) diffList then
-                ( List.sum diffList |> Time.inSeconds |> (flip (/) 3) |> intervalToBpm |> Just, List.take 4 tapList )
-            else
-                ( Nothing, tapList )
+        if List.all (\x -> x < 6) diffList then
+            ( List.sum diffList |> (\a -> (/) a 3) |> intervalToBpm |> Just, List.take 4 tapList )
+
+        else
+            ( Nothing, tapList )
 
 
 noteTypeToClass : NoteType -> String
