@@ -10,6 +10,12 @@
 <body>
 
 </body>
+<script>
+//タップにより画面が拡大されてしまうことを防ぐ
+document.body.addEventListener("touchend", function(e){
+    e.preventDefault();
+});
+</script>
 <script src="dist/elm.js">
 </script>
 <!--
