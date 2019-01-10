@@ -55,6 +55,13 @@ exports.stopOscillatorImpl = function(n, o, unit){
     };
 };
 
+exports.setOscillatorTypeImpl = function(o, type, unit){
+    return function(){
+        o.type = type;
+        return unit;
+    };
+};
+
 exports.setGainValueImpl = function(val, gain, unit){
     return function(){
         gain.gain.value = val;

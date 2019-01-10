@@ -18,6 +18,7 @@ foreign import startOscillatorImpl :: Fn3 Number Oscillator Unit (Effect Unit)
 foreign import stopOscillatorImpl :: Fn3 Number Oscillator Unit (Effect Unit)
 foreign import setGainValueImpl :: Fn3 Number GainNode Unit (Effect Unit)
 foreign import getCurrentTime :: AudioContext -> Effect Number
+foreign import setOscillatorTypeImpl :: Fn3 Oscillator String Unit (Effect Unit)
 
 gainConnectToContext :: GainNode -> AudioContext -> Effect Unit
 gainConnectToContext g a = runFn3 gainConnectToContextImpl g a unit
@@ -36,3 +37,14 @@ stopOscillator n o = runFn3 stopOscillatorImpl n o unit
 
 setGainValue :: Number -> GainNode -> Effect Unit
 setGainValue v g = runFn3 setGainValueImpl v g unit
+
+data OscillatorType = Sine | Square | Sawtooth | Triangle
+
+instance showOscillatorType :: Show OscillatorType where
+  show Sine = "sine"
+  show Square = "square"
+  show Sawtooth = "sawtooth"
+  show Triangle = "triangle"
+
+setOscillatorType :: Oscillator -> OscillatorType -> Effect Unit
+setOscillatorType o t = runFn3 setOscillatorTypeImpl o (show t) unit
