@@ -2,7 +2,7 @@ module Main where
 
 import Prelude
 
-import Audio (AudioContext, GainNode, createGain, createOscillator, gainConnectToContext, gainConnectToGain, getAudioContext, getCurrentTime, oscillatorConnectToGain, setGainValue, startOscillator, stopOscillator)
+import Audio (AudioContext, GainNode, OscillatorType(..), createGain, createOscillator, gainConnectToContext, gainConnectToGain, getAudioContext, getCurrentTime, oscillatorConnectToGain, setGainValue, setOscillatorType, startOscillator, stopOscillator)
 import Data.Array (any, cons, head, last, reverse, singleton, tail)
 import Data.Function.Uncurried (Fn3, runFn3)
 import Data.Int (ceil, toNumber)
@@ -129,6 +129,7 @@ createMetronome = do
 setNote :: Metronome -> Time -> GainNode -> Effect Unit
 setNote m t g = do
   o <- createOscillator m.ctx
+  setOscillatorType o Sawtooth
   oscillatorConnectToGain o g
   startOscillator t o
   stopOscillator (t + length) o
