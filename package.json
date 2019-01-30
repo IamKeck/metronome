@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "install": "bower install",
-    "build": "npm run install && elm make src/Main.elm --output dist/elm.js && pulp browserify > dist/ps.js"
+    "build_elm": "elm make src/Main.elm --output dist/elm.js ",
+    "build_ps": "pulp browserify > dist/ps.js",
+    "build": "npm run install && npm run build_elm && npm run build_ps"
   },
   "repository": {
     "type": "git",
