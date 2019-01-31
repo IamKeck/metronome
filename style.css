@@ -1,3 +1,6 @@
+html{
+    touch-action: manipulation;
+}
 #container{
     width: 90vw;
     height:90vh;
